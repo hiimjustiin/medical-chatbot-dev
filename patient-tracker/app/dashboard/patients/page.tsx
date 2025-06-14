@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import AddNewPatient from "./_components/AddNewPatient";
 import PatientListTable from "./_components/PatientListTable";
+import UploadReport from "./_components/UploadReport";
 
 function Patient() {
   const [reload, setReload] = useState(false);
@@ -14,7 +15,10 @@ function Patient() {
     <div className="p-7">
       <h2 className="font-bold text-2xl flex justify-between items-center">
         Patients
-        <AddNewPatient onPatientAdded={handlePatientAdded} />
+        <div className="flex gap-2">
+          <AddNewPatient onPatientAdded={handlePatientAdded} />
+          <UploadReport />
+        </div>
       </h2>
       <PatientListTable reload={reload} setReload={setReload} />
     </div>

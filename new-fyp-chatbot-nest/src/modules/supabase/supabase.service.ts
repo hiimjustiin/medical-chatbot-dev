@@ -2,6 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ConfigService } from '@nestjs/config';
 
+interface WorkoutData {
+  patient_id: string;
+  start_date: string;
+  duration: number;
+  steps: number;
+  distance: number;
+  calories: number;
+  moderate_intensity: number;
+  vigorous_intensity: number;
+  heartrate_data: any[];
+}
+
 @Injectable()
 export class SupabaseService {
   private supabase: SupabaseClient;
@@ -455,5 +467,32 @@ export class SupabaseService {
     }
 
     return data?.fcm_token || null;
+  }
+
+  async getPatientById(patientId: string) {
+    const { data, error } = await this.supabase
+      .from('patients')
+      .select('*')
+      .eq('id', patientId)
+      .single();
+
+    if (error) {
+      throw new Error(`获取患者信息失败: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  async insertWorkoutData(workoutData: WorkoutData) {
+    const { data, error } = await this.supabase
+      .from('workouts')
+      .insert([workoutData])
+      .select();
+
+    if (error) {
+      throw new Error(`插入运动数据失败: ${error.message}`);
+    }
+
+    return data;
   }
 }

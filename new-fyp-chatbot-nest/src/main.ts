@@ -8,13 +8,14 @@ import * as fs from 'fs';  // 引入文件模块
 config();
 
 async function bootstrap() {
-  //  读取 HTTPS 证书
-  const httpsOptions = {
-    key: fs.readFileSync('./cert.key'),
-    cert: fs.readFileSync('./cert.pem'), 
-  };
+  // //  读取 HTTPS 证书
+  // const httpsOptions = {
+  //   key: fs.readFileSync('./cert.key'),
+  //   cert: fs.readFileSync('./cert.pem'), 
+  // };
 
-  const app = await NestFactory.create(AppModule, { httpsOptions });
+  // 本地开发用 HTTP
+  const app = await NestFactory.create(AppModule); // 不传 httpsOptions
   app.use(cors());
 
   app.use(bodyParser.urlencoded({ extended: true }));
@@ -22,7 +23,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3005;
   await app.listen(port);
-  console.log(`Application is running on: https://localhost:${port}`);
+  console.log(`Application is running on: http://localhost:${port}`); // 改为 http
 }
 bootstrap();
 

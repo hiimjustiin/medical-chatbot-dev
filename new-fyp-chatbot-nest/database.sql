@@ -166,6 +166,24 @@ create table public.user_sessions (
   )
 ) TABLESPACE pg_default;
 
+create table public.workouts (
+  id uuid not null default gen_random_uuid(),
+  patient_id uuid not null,
+  start_date timestamp with time zone not null,
+  duration integer not null,
+  steps integer not null,
+  distance numeric(10,2) not null,
+  calories numeric(10,2) not null,
+  moderate_intensity integer not null,
+  vigorous_intensity integer not null,
+  heartrate_data jsonb not null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint workouts_pkey primary key (id),
+  constraint workouts_patient_id_fkey foreign key (patient_id)
+    references public.patients (id) on delete cascade
+) TABLESPACE pg_default;
+
 CREATE OR REPLACE FUNCTION public.onAuthUserCreatedTrigger()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -182,3 +200,42 @@ $$;
 create trigger OnAuthUserCreated
   after insert on auth.users
   for each row execute procedure public.onAuthUserCreatedTrigger();
+
+-- 迁移数据从 tracker 到 workouts
+INSERT INTO workouts (
+  patient_id,
+  start_date,
+  duration,
+  steps,
+  distance,
+  calories,
+  moderate_intensity,
+  vigorous_intensity,
+  heartrate_data
+)
+SELECT 
+  "profileID",
+  "startDate"::timestamp with time zone,
+  duration,
+  steps,
+  distance,
+  calories,
+  "moderateIntensity",
+  "vigorousIntesity",
+  heartrate
+FROM tracker
+WHERE "profileID" IS NOT NULL;
+
+-- 删除旧的 tracker 表
+DROP TABLE IF EXISTS public.tracker;
+
+-- 更新 workouts 表的约束
+ALTER TABLE public.workouts
+  ADD CONSTRAINT workouts_patient_id_fkey 
+  FOREIGN KEY (patient_id) 
+  REFERENCES public.patients (id) 
+  ON DELETE CASCADE;
+
+-- 添加索引以提高查询性能
+CREATE INDEX idx_workouts_patient_id ON public.workouts(patient_id);
+CREATE INDEX idx_workouts_start_date ON public.workouts(start_date);

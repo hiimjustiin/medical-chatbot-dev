@@ -1,73 +1,175 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { SupabaseService } from '../supabase/supabase.service';
+
+interface HeartRateData {
+  date: string;
+  heartrate: number;
+}
+
+interface WorkoutData {
+  userID: string;
+  startDate: string;
+  duration: number;
+  steps: number;
+  distance: number;
+  calories: number;
+  moderateIntensity: number;
+  vigorousIntensity: number;
+  heartrate: HeartRateData[];
+}
 
 @Injectable()
 export class ParserService {
   private readonly logger = new Logger(ParserService.name);
 
-  async extractMultiplePatientsFromTxt(fileContent: string): Promise<
-    Array<{
-      phone: string;
-      patient: {
-        name: string;
-        age: number;
-        condition: string;
-        appointment: string;
-        doctor: string;
-      };
-    }>
-  > {
+  constructor(private readonly supabaseService: SupabaseService) {}
+
+  async parseWorkoutData(fileContent: string): Promise<WorkoutData[]> {
     const lines = fileContent.trim().split('\n');
+    const results: WorkoutData[] = [];
 
     if (lines.length <= 1) {
       this.logger.warn('TXT 文件中没有有效的数据行');
-      return [];
+      return results;
     }
 
-    const header = lines[0];
-    this.logger.log(`读取到表头: ${header}`);
-
-    const results = [];
-
+    // 跳过表头
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      if (!line.trim()) continue; // 跳过空行
+      if (!line.trim()) continue;
 
       const [
         userID,
-        phoneNumber,
         startDate,
         duration,
         steps,
         distance,
         calories,
-        moderate,
-        vigorous,
+        moderateIntensity,
+        vigorousIntensity,
         heartrateJson
       ] = line.split(';');
 
-      if (!phoneNumber || !startDate) {
-        this.logger.warn(`第 ${i + 1} 行缺少手机号或起始日期，跳过`);
-        continue;
+      try {
+        const heartrate = heartrateJson ? JSON.parse(heartrateJson) : [];
+        
+        results.push({
+          userID,
+          startDate,
+          duration: parseInt(duration),
+          steps: parseInt(steps),
+          distance: parseFloat(distance),
+          calories: parseFloat(calories),
+          moderateIntensity: parseInt(moderateIntensity),
+          vigorousIntensity: parseInt(vigorousIntensity),
+          heartrate
+        });
+      } catch (error) {
+        this.logger.error(`解析第 ${i + 1} 行时出错: ${error.message}`);
       }
-
-      const patient = {
-        name: `User ${userID}`,
-        age: 60, // 默认年龄，你也可以根据用户数据填充
-        condition: 'Your recent fitness activity',
-        appointment: new Date(startDate).toISOString().split('T')[0],
-        doctor: 'Dr. AI Health Bot',
-      };
-
-      const phone = phoneNumber.startsWith('+')
-        ? phoneNumber.trim()
-        : `+65${phoneNumber.trim()}`;
-
-      this.logger.log(`第 ${i + 1} 行解析成功，phone=${phone}`);
-
-      results.push({ phone, patient });
     }
 
-    this.logger.log(`总共成功解析 ${results.length} 条患者信息`);
     return results;
+  }
+
+  async calculateExerciseDuration(heartrate: HeartRateData[], threshold: number): Promise<number> {
+    if (!heartrate || heartrate.length === 0) return 0;
+
+    let duration = 0;
+    let startTime: string | null = null;
+
+    for (let i = 0; i < heartrate.length; i++) {
+      const current = heartrate[i];
+      
+      if (current.heartrate > threshold) {
+        if (!startTime) {
+          startTime = current.date;
+        }
+      } else if (startTime) {
+        const start = new Date(startTime);
+        const end = new Date(current.date);
+        duration += (end.getTime() - start.getTime()) / 1000; // 转换为秒
+        startTime = null;
+      }
+    }
+
+    // 处理最后一个时间段
+    if (startTime) {
+      const start = new Date(startTime);
+      const end = new Date(heartrate[heartrate.length - 1].date);
+      duration += (end.getTime() - start.getTime()) / 1000;
+    }
+
+    return Math.round(duration / 60); // 转换为分钟并四舍五入
+  }
+
+  // 新增：按天合并运动数据
+  groupWorkoutsByDay(records: WorkoutData[]): WorkoutData[] {
+    const grouped: { [date: string]: WorkoutData } = {};
+    for (const rec of records) {
+      // 只取日期部分
+      const day = rec.startDate.split('T')[0];
+      if (!grouped[day]) {
+        grouped[day] = {
+          ...rec,
+          startDate: day,
+          heartrate: Array.isArray(rec.heartrate) ? [...rec.heartrate] : [],
+        };
+      } else {
+        grouped[day].duration += rec.duration;
+        grouped[day].steps += rec.steps;
+        grouped[day].distance += rec.distance;
+        grouped[day].calories += rec.calories;
+        grouped[day].moderateIntensity += rec.moderateIntensity;
+        grouped[day].vigorousIntensity += rec.vigorousIntensity;
+        grouped[day].heartrate = grouped[day].heartrate.concat(rec.heartrate || []);
+      }
+    }
+    return Object.values(grouped);
+  }
+
+  // 批量处理并入库
+  async processWorkoutsBatch(workoutList: WorkoutData[], patientId: string) {
+    try {
+      // 获取患者的心率阈值
+      const patient = await this.supabaseService.getPatientById(patientId);
+      if (!patient) {
+        throw new Error(`Patient not found: ${patientId}`);
+      }
+      const results = [];
+      for (const workoutData of workoutList) {
+        // 计算超过阈值的时间
+        const moderateDuration = await this.calculateExerciseDuration(
+          workoutData.heartrate,
+          patient.moderate_hr_min
+        );
+        const vigorousDuration = await this.calculateExerciseDuration(
+          workoutData.heartrate,
+          patient.vigorous_hr_min
+        );
+        // 保存到数据库
+        await this.supabaseService.insertWorkoutData({
+          patient_id: patientId,
+          start_date: workoutData.startDate,
+          duration: workoutData.duration,
+          steps: workoutData.steps,
+          distance: workoutData.distance,
+          calories: workoutData.calories,
+          moderate_intensity: moderateDuration,
+          vigorous_intensity: vigorousDuration,
+          heartrate_data: workoutData.heartrate
+        });
+        results.push({
+          date: workoutData.startDate,
+          success: true,
+          moderateDuration,
+          vigorousDuration
+        });
+      }
+      return results;
+    } catch (error) {
+      this.logger.error(`Batch process error: ${error.message}`);
+      throw error;
+    }
   }
 }

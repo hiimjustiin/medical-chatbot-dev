@@ -28,6 +28,47 @@ function PatientListTable({ reload, setReload }) {
   const [error, setError] = useState(null);
   const [searchInput, setSearchInput] = useState("");
 
+  const UploadReportButton = (props) => {
+    const fileInputRef = useRef();
+
+    const handleFileChange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("files", file);
+      formData.append("patientId", props.data.id);
+      try {
+        const res = await fetch("http://localhost:3005/parser/upload-workout", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        toast.success(data.message || "Upload completed");
+      } catch (err) {
+        toast.error("Upload failed");
+      }
+    };
+
+    return (
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current.click()}
+        >
+          Upload Report
+        </Button>
+        <input
+          type="file"
+          accept=".txt"
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+      </>
+    );
+  };
+
   const CustomButtons = (props) => {
     return (
       <div className="flex gap-2">
@@ -65,6 +106,7 @@ function PatientListTable({ reload, setReload }) {
         >
           <Bell className="h-4 w-4" />
         </Button>
+        <UploadReportButton data={props.data} />
       </div>
     );
   };
