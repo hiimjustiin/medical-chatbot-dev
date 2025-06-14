@@ -23,4 +23,5 @@ newfypchatbot-8b49e-firebase-adminsdk-u2zms-210a7c7c29.json
 
 # Python
 venv/
-__pycache__/
+__pycache__/medical-chatbot-dev/
+medical-chatbot-dev/

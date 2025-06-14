@@ -11,7 +11,7 @@ export async function signup(formData: FormData) {
   // Type-casting here for convenience
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const full_name = formData.get("name") as string; // Get full_name from form data
+ 
 
   // Sign up the user with email, password, and metadata
   const { data, error } = await supabase.auth.signUp({
@@ -19,7 +19,6 @@ export async function signup(formData: FormData) {
     password,
     options: {
       data: {
-        full_name, // Include full_name in the user metadata
         role: "doctor", // Explicitly set the role to 'doctor' for web app registrations
       },
     },

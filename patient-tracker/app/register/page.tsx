@@ -50,19 +50,6 @@ export default function RegisterPage() {
         ) : (
           <form className="space-y-8" onSubmit={handleRegister}>
             <div className="grid w-full items-center gap-1.5">
-              <Label htmlFor="name" className="text-gray-700 text-lg">
-                Full Name:
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your full name"
-              />
-            </div>
-            <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="email" className="text-gray-700 text-lg">
                 Email:
               </Label>

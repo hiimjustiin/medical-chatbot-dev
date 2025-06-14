@@ -29,7 +29,7 @@ type Inputs = {
 };
 
 type AddNewPatientProps = {
-  onPatientAdded: () => void; // Callback to refresh data after adding a new patient
+  onPatientAdded: () => void;
 };
 
 function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
@@ -56,9 +56,9 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
         .map((time) => time.trim());
 
       const patientDetails = {
-        full_name:    data.full_name,
-        gender:       data.gender,
-        age:          data.age,
+        full_name: data.full_name,
+        gender: data.gender,
+        age: data.age,
         phone_number: data.phone_number,
         moderate_hr_min: data.moderate_hr_min,
         moderate_hr_max: data.moderate_hr_max,
@@ -71,9 +71,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
       };
 
       const addPatientResponse = await fetch(
-        `http://${window.location.hostname}:${
-          process.env.NEXT_PUBLIC_API_PORT || 3000
-        }/api/data/add-patient`,
+        `${process.env.NEXT_PUBLIC_API_URL}/add-patient`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -82,8 +80,6 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
       );
 
       if (!addPatientResponse.ok) {
-        console.log(addPatientResponse);
-
         if (addPatientResponse.status === 400) {
           const { message } = await addPatientResponse.json();
           toast.error(message);
@@ -95,48 +91,58 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
       }
 
       toast.success("Patient details added successfully.");
-
       const { patientId } = await addPatientResponse.json();
       return patientId;
     } catch (error) {
+      console.error("Error adding patient:", error);
       toast.error("Error adding patient.");
     }
-  }
+  };
 
+ 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     try {
-      const patientId = await addPatient(data);
+      const patientId = await addPatient(data); // ✅ 添加病人，只为写入 Supabase
 
       if (uploadedFiles.length > 0) {
         const formData = new FormData();
-        formData.append("profileID", patientId);              // 如果还需要存数据库
-        formData.append("userId", patientId);                 // GPT + WhatsApp 发送使用
-        formData.append("phone", data.phone_number);          // 添加电话号码
-        uploadedFiles.forEach((file) => {
-          formData.append("files", file);
-        });
+
+      // ✅ 只传 phone 和单个文件，后端根据 phone 查 userId/profileID
+        formData.append("phone", data.phone_number);
+        formData.append("files", uploadedFiles[0]); // 只传第一个 txt 文件
+
+        const backendBaseUrl =
+          process.env.NEXT_PUBLIC_API_URL?.replace("/api/data", "") || "";
+        console.log("🚀 onSubmit triggered");
+
+        console.log("🚀 Uploading to:", `${backendBaseUrl}/parser/upload-and-send`);
+        console.log("📦 FormData phone:", formData.get("phone"));
+        console.log("📦 FormData file:", formData.get("files"));
+
 
         const fileUploadResponse = await fetch(
-          `http://${window.location.hostname}:${process.env.NEXT_PUBLIC_API_PORT || 3000}/parser/upload-and-send`,
+          `${backendBaseUrl}/parser/upload-and-send`,
           {
             method: "POST",
             body: formData,
           }
         );
-
+ 
         if (fileUploadResponse.ok) {
           toast.success("Files parsed and uploaded successfully.");
         } else {
           toast.error("Failed to parse and upload files.");
         }
       }
-      onPatientAdded();
 
-      setOpen(false);
+      onPatientAdded(); // 刷新列表
+      setOpen(false);   // 关闭弹窗
     } catch (error) {
+      console.error("Upload error:", error);
       toast.error("Error submitting patient data.");
     }
   };
+
 
   return (
     <div>
@@ -163,7 +169,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     {...register("gender", { required: true })}
                     className="bg-white border rounded-md p-2 w-full"
                   >
-                    <option value="">Select Disability Level</option>
+                    <option value="">Select Gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
@@ -320,3 +326,4 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
 }
 
 export default AddNewPatient;
+

@@ -1,45 +1,73 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class ParserService {
-  // Parse the text content of a file buffer into a JSON structure
-  parseTextFileContent(content: string, profileID: string): any[] {
-    const lines = content.split('\n').filter(Boolean);
+  private readonly logger = new Logger(ParserService.name);
 
-    // Skip the header if it exists
-    if (lines[0].startsWith('userID')) {
-      lines.shift();
+  async extractMultiplePatientsFromTxt(fileContent: string): Promise<
+    Array<{
+      phone: string;
+      patient: {
+        name: string;
+        age: number;
+        condition: string;
+        appointment: string;
+        doctor: string;
+      };
+    }>
+  > {
+    const lines = fileContent.trim().split('\n');
+
+    if (lines.length <= 1) {
+      this.logger.warn('TXT 文件中没有有效的数据行');
+      return [];
     }
 
-    const records = lines.map((line) => {
-      const data = line.split(';');
+    const header = lines[0];
+    this.logger.log(`读取到表头: ${header}`);
 
-      if (data.length !== 9) {
-        throw new Error(`Invalid line format: ${line}`);
+    const results = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue; // 跳过空行
+
+      const [
+        userID,
+        phoneNumber,
+        startDate,
+        duration,
+        steps,
+        distance,
+        calories,
+        moderate,
+        vigorous,
+        heartrateJson
+      ] = line.split(';');
+
+      if (!phoneNumber || !startDate) {
+        this.logger.warn(`第 ${i + 1} 行缺少手机号或起始日期，跳过`);
+        continue;
       }
 
-      let heartrate;
-      try {
-        heartrate = JSON.parse(data[8]);
-      } catch (error) {
-        console.error(`Error parsing JSON for heartrate: ${data[8]}`);
-        throw new Error(`Invalid JSON in heartrate field: ${data[8]}`);
-      }
-
-      return {
-        userID: parseInt(data[0], 10),
-        startDate: data[1],
-        duration: parseInt(data[2], 10),
-        steps: parseInt(data[3], 10),
-        distance: parseFloat(data[4]),
-        calories: parseFloat(data[5]),
-        moderateIntensity: parseInt(data[6], 10),
-        vigorousIntensity: parseInt(data[7], 10),
-        heartrate: heartrate,
-        profileID: profileID, // Add profileID to each record
+      const patient = {
+        name: `User ${userID}`,
+        age: 60, // 默认年龄，你也可以根据用户数据填充
+        condition: 'Your recent fitness activity',
+        appointment: new Date(startDate).toISOString().split('T')[0],
+        doctor: 'Dr. AI Health Bot',
       };
-    });
 
-    return records;
+      const phone = phoneNumber.startsWith('+')
+        ? phoneNumber.trim()
+        : `+65${phoneNumber.trim()}`;
+
+      this.logger.log(`第 ${i + 1} 行解析成功，phone=${phone}`);
+
+      results.push({ phone, patient });
+    }
+
+    this.logger.log(`总共成功解析 ${results.length} 条患者信息`);
+    return results;
   }
 }

@@ -4,107 +4,89 @@ import {
   UploadedFiles,
   UseInterceptors,
   BadRequestException,
-  Body,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ParserService } from '../parser/parser.service';
+import { ParserService } from './parser.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { ChatService } from '../gpt/gpt.service'; // ← 改这个
+import { ChatService } from '../gpt/gpt.service';
 import axios from 'axios';
+import * as fs from 'fs/promises';
+import { Logger } from '@nestjs/common';
 
 @Controller('parser')
 export class ParserController {
+  private readonly logger = new Logger(ParserController.name);
+
   constructor(
     private readonly parserService: ParserService,
     private readonly supabaseService: SupabaseService,
     private readonly chatService: ChatService,
   ) {}
 
-  // ✅ 接口 1：结构化上传（已有逻辑）
-  @Post('parse-and-upload')
-  @UseInterceptors(FilesInterceptor('files', 50))
-  async parseAndUpload(
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body('profileID') profileID: string,
-  ) {
-    console.log(profileID);
-    if (!files || files.length === 0) {
-      throw new BadRequestException('No files uploaded');
-    }
-
-    if (!profileID) {
-      throw new BadRequestException('Profile ID is required');
-    }
-
-    const allParsedRecords = [];
-
-    try {
-      for (const file of files) {
-        const fileContent = file.buffer.toString('utf-8');
-        const parsedRecords = this.parserService.parseTextFileContent(
-          fileContent,
-          profileID,
-        );
-        allParsedRecords.push(...parsedRecords);
-      }
-
-      const savedRecords =
-        await this.supabaseService.insertParsedRecords(allParsedRecords);
-      return { success: true, savedRecords };
-    } catch (error) {
-      console.error('Error parsing files:', error);
-      throw new BadRequestException('Failed to parse and upload files');
-    }
-  }
-
-  // ✅ 接口 2：上传文档 → GPT 生成消息 → 发 WhatsApp
   @Post('upload-and-send')
   @UseInterceptors(FilesInterceptor('files', 1))
-  async uploadAndSend(
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body('userId') userId: string,
-    @Body('phone') phone: string,
-  ) {
+  async uploadAndSend(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('No file uploaded');
     }
-    if (!userId || !phone) {
-      throw new BadRequestException('User ID and phone number are required');
-    }
 
     const file = files[0];
-    const fileContent = file.buffer.toString('utf-8');
+    const content = file.buffer.toString('utf-8');
+    this.logger.log(`📄 Received file: ${file.originalname}`);
 
-    const summaryPrompt = `Please generate a health report summary suitable for sending via WhatsApp based on the following exercise record text. The language should be friendly and gentle, and no more than 80 words：\n\n${fileContent}`;
+    const patientList = await this.parserService.extractMultiplePatientsFromTxt(content);
+    this.logger.log(`📊 Parsed ${patientList.length} patient records`);
 
-    const gptResponse = await this.chatService.chatWithGPT(
-      userId,
-      summaryPrompt,
-    );
+    const results = [];
 
-    // ✅ 实际调用 Flask 的 WhatsApp Bot 接口
-    try {
-      const res = await axios.post('http://localhost:5000/send/', {
-        to: phone,
-        body: gptResponse.response,
-      });
+    for (const { phone, patient } of patientList) {
+      try {
+        this.logger.log(`📞 Processing phone: ${phone}`);
 
-      return {
-        success: true,
-        message: gptResponse.response,
-        twilioStatus: res.data.status,
-        sid: res.data.sid,
-      };
-    } catch (err) {
-      console.error('❌ WhatsApp sending fails:', err);
-      return {
-        success: false,
-        message: gptResponse.response,
-        error: err.message,
-      };
+        // 调用 GPT 生成消息
+        const gptResponse = await this.chatService.chatWithGPT(phone, JSON.stringify(patient));
+        this.logger.log(`🧠 GPT response ready for ${phone}`);
+
+        // 获取 Supabase 中患者 ID
+        const userId = await this.supabaseService.getUserIdByPhone(phone);
+        if (userId) {
+          await this.supabaseService.insertChatHistory(
+            userId.toString(),
+            'assistant',
+            gptResponse.response,
+          );
+          this.logger.log(`📝 Chat history saved for ${phone}`);
+        } else {
+          this.logger.warn(`⚠️ Supabase: No userId found for ${phone}`);
+        }
+
+        // 调用 Flask Bot 发 WhatsApp 消息
+        const res = await axios.post('http://localhost:5000/send/', {
+          to: phone,
+          body: gptResponse.response,
+        });
+
+        results.push({
+          phone,
+          status: 'sent',
+          message: gptResponse.response,
+          sid: res.data.sid || null,
+        });
+
+        this.logger.log(`✅ WhatsApp message sent to ${phone}`);
+      } catch (err) {
+        this.logger.error(`❌ Failed to process ${phone}: ${err.message}`);
+        results.push({
+          phone,
+          status: 'failed',
+          error: err.message,
+        });
+      }
     }
+
+    return {
+      total: results.length,
+      results,
+    };
   }
 }
-// 以上代码实现了两个主要功能：
-// 1. 接收上传的文件，解析内容并保存到 Supabase 数据库。
-// 2. 接收上传的文件内容，生成健康报告摘要，并通过 WhatsApp 发送给指定用户。  

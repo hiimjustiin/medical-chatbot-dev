@@ -33,66 +33,6 @@ export class AppController {
 
     return { profileId: id };
   }
-
-  @Get('get-patients')
-  async getPatients() {
-    try {
-      const patients = await this.patientService.getPatients();
-
-      if (!patients || patients.length === 0) {
-        // Return a 204 No Content if no patients are found, instead of throwing an error
-        return {
-          statusCode: HttpStatus.NO_CONTENT,
-          message: 'No patient display data found',
-          patients: [],
-        };
-      }
-
-      // Return a 200 OK status with the patient data if found
-      return {
-        statusCode: HttpStatus.OK,
-        message: 'Patient display data fetched successfully',
-        patients,
-      };
-    } catch (error) {
-      // Handle unexpected errors with a generic error message and log the actual error
-      return {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'An error occurred while fetching patient display data',
-        error: error.message,
-      };
-    }
-  }
-
-  @Post('add-patient')
-  async addNewPatient(@Body() patientData: any) {
-    try {
-      const result = await this.patientService.addNewPatient(patientData);
-
-      if (!result.success) {
-        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
-      }
-
-      return { success: true, message: 'Patient added successfully', patientId: result.patientId };
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
-
-  @Delete('delete-patient')
-  async deletePatient(@Body('id') id: string) {
-    try {
-      const result = await this.patientService.deletePatient(id);
-
-      if (!result.success) {
-        throw new HttpException(result.message, HttpStatus.BAD_REQUEST);
-      }
-
-      return { success: true, message: 'Patient deleted successfully' };
-    } catch (error) {
-      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-  }
   
   @Get('get-patient-names')
   async getPatientNames() {

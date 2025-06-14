@@ -11,6 +11,7 @@ import { SupabaseService } from './modules/supabase/supabase.service';
 import { MapService } from './modules/map/map.service';
 import { ExerciseService } from './modules/exercise/exercise.service';
 import { PatientService } from './modules/patient/patient.service';
+import { PatientController } from './modules/patient/patient.controller'; // ✅ 必须加上这一行！
 import { UserAvailabilityService } from './modules/userAvailability/user_availability.service';
 import { ExerciseAllocationService } from './modules/exercise/exercise_allocation.service';
 import { ExerciseSummaryService } from './modules/exercise/exercise_summary.service';
@@ -29,6 +30,7 @@ import { ConfigModule } from '@nestjs/config';
     ParserController,
     ExerciseController,
     MapController,
+    PatientController, // ✅ 加上这一行
   ],
   providers: [
     ChatService,

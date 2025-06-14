@@ -4,6 +4,7 @@ import os
 
 from config import Config
 from routes import register_routes
+from routes.send import send_daily_prompt  # ✅ 你要定时执行的函数
 
 if os.path.exists(".env"):
     load_dotenv()
@@ -13,11 +14,17 @@ else:
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    app.url_map.strict_slashes = False  # ✅ 
+
     register_routes(app)
+
+    # 添加一个首页路由，用于浏览器访问测试
+    @app.route("/", methods=["GET"])
+    def home():
+        return "Flask WhatsApp Bot is running!"
 
     return app
 
+
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)

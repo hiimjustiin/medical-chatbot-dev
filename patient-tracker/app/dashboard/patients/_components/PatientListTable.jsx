@@ -90,20 +90,36 @@ function PatientListTable({ reload, setReload }) {
   ]);
 
   const fetchPatients = async () => {
+    setLoading(true); // 可选，确保一开始设置 loading 状态
     try {
-      const response = await fetch(
-        `http://${window.location.hostname}:${
-          process.env.NEXT_PUBLIC_API_PORT || 3000
-        }/api/data/get-patients`
-      );
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+      if (!apiUrl) {
+        throw new Error("Environment variable NEXT_PUBLIC_API_URL is not defined");
+      }
+
+      const fullUrl = `${apiUrl}/get-patients`;
+      console.log("Fetching data from:", fullUrl);
+
+      const response = await fetch(fullUrl);
+
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+        throw new Error(`Request failed with status ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      setRowData(data.patients || []);
+
+      console.log("Received data:", data);
+
+      if (!data || !Array.isArray(data.patients)) {
+        throw new Error("Invalid data format: 'patients' field is missing or not an array");
+      }
+
+      setRowData(data.patients);
     } catch (error) {
+      console.error("Error during fetchPatients:", error);
       setError(error.message || "Failed to fetch patients data");
     } finally {
       setLoading(false);
@@ -112,10 +128,8 @@ function PatientListTable({ reload, setReload }) {
 
   const deletePatient = async (patientId) => {
     try {
-      const response = await fetch(
-        `http://${window.location.hostname}:${
-          process.env.NEXT_PUBLIC_API_PORT || 3000
-        }/api/data/delete-patient`,
+      const response = await fetch(     
+        `${process.env.NEXT_PUBLIC_API_URL}/delete-patient`,
         {
           method: "DELETE",
           headers: {
@@ -138,11 +152,7 @@ function PatientListTable({ reload, setReload }) {
 
   const sendNotification = async (patientId) => {
     try {
-      const response = await fetch(
-        `http://${window.location.hostname}:${
-          process.env.NEXT_PUBLIC_API_PORT || 3000
-        }/notifications/send`,
-        {
+      const response = await fetch("/notifications/send", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
