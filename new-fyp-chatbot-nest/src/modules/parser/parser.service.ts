@@ -72,11 +72,12 @@ export class ParserService {
     return results;
   }
 
-  async calculateExerciseDuration(heartrate: HeartRateData[], threshold: number): Promise<number> {
+  async calculateExerciseDuration(heartrate: HeartRateData[]): Promise<number> {
     if (!heartrate || heartrate.length === 0) return 0;
 
     let duration = 0;
     let startTime: string | null = null;
+    const threshold = 100; // 固定心率为 100
 
     for (let i = 0; i < heartrate.length; i++) {
       const current = heartrate[i];
@@ -131,22 +132,16 @@ export class ParserService {
   // 批量处理并入库
   async processWorkoutsBatch(workoutList: WorkoutData[], patientId: string) {
     try {
-      // 获取患者的心率阈值
+      // 获取患者信息（仅用于验证患者存在）
       const patient = await this.supabaseService.getPatientById(patientId);
       if (!patient) {
         throw new Error(`Patient not found: ${patientId}`);
       }
       const results = [];
       for (const workoutData of workoutList) {
-        // 计算超过阈值的时间
-        const moderateDuration = await this.calculateExerciseDuration(
-          workoutData.heartrate,
-          patient.moderate_hr_min
-        );
-        const vigorousDuration = await this.calculateExerciseDuration(
-          workoutData.heartrate,
-          patient.vigorous_hr_min
-        );
+        // 计算超过 100 心率的时间
+        const exerciseDuration = await this.calculateExerciseDuration(workoutData.heartrate);
+        
         // 保存到数据库
         await this.supabaseService.insertWorkoutData({
           patient_id: patientId,
@@ -155,15 +150,14 @@ export class ParserService {
           steps: workoutData.steps,
           distance: workoutData.distance,
           calories: workoutData.calories,
-          moderate_intensity: moderateDuration,
-          vigorous_intensity: vigorousDuration,
+          moderate_intensity: exerciseDuration, // 使用相同的时间
+          vigorous_intensity: exerciseDuration, // 使用相同的时间
           heartrate_data: workoutData.heartrate
         });
         results.push({
           date: workoutData.startDate,
           success: true,
-          moderateDuration,
-          vigorousDuration
+          exerciseDuration
         });
       }
       return results;

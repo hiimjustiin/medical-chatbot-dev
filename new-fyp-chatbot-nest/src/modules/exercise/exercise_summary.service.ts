@@ -24,7 +24,7 @@ export class ExerciseSummaryService {
 
     const patient = await this.supabaseService.getPatientById(profileId);
     if (!patient) {
-      throw new Error(`未找到患者 ID: ${profileId}`);
+      throw new Error(`Patient not found with ID: ${profileId}`);
     }
 
     const { data, error } = await supabase
@@ -35,7 +35,7 @@ export class ExerciseSummaryService {
       .lte('start_date', endOfWeek);
 
     if (error) {
-      throw new Error(`获取运动数据失败: ${error.message}`);
+      throw new Error(`Failed to get workout data: ${error.message}`);
     }
 
     if (!data || data.length === 0) {
@@ -91,24 +91,24 @@ export class ExerciseSummaryService {
     const patient = await this.supabaseService.getPatientById(profileId);
 
     if (!patient) {
-      throw new Error(`未找到患者 ID: ${profileId}`);
+      throw new Error(`Patient not found with ID: ${profileId}`);
     }
 
     const remainingMinutes = Math.max(0, patient.target_duration_week - report.totalExerciseDuration);
     const progressPercentage = Math.round(report.weeklyProgress);
 
-    let message = `本周运动进度报告 (${now.startOf('week').toFormat('MM-dd')} 至 ${now.endOf('week').toFormat('MM-dd')}):\n\n`;
-    message += `总运动时间: ${report.totalExerciseDuration} 分钟\n`;
-    message += `目标完成度: ${progressPercentage}%\n`;
-    message += `平均心率: ${report.avgHeartRate.toFixed(1)} bpm\n`;
-    message += `运动次数: ${report.exerciseCount} 次\n`;
-    message += `中等强度运动: ${report.totalModerateIntensity} 分钟\n`;
-    message += `高强度运动: ${report.totalVigorousIntensity} 分钟\n\n`;
+    let message = `Weekly exercise progress report (${now.startOf('week').toFormat('MM-dd')} to ${now.endOf('week').toFormat('MM-dd')}):\n\n`;
+    message += `Total exercise duration: ${report.totalExerciseDuration} minutes\n`;
+    message += `Target completion: ${progressPercentage}%\n`;
+    message += `Average heart rate: ${report.avgHeartRate.toFixed(1)} bpm\n`;
+    message += `Number of workouts: ${report.exerciseCount}\n`;
+    message += `Moderate intensity exercise: ${report.totalModerateIntensity} minutes\n`;
+    message += `Vigorous intensity exercise: ${report.totalVigorousIntensity} minutes\n\n`;
 
     if (remainingMinutes > 0) {
-      message += `距离本周目标还差 ${remainingMinutes} 分钟，请继续加油！`;
+      message += `You still need ${remainingMinutes} minutes to reach your weekly goal. Keep going!`;
     } else {
-      message += `恭喜您已完成本周运动目标！`;
+      message += `Congratulations! You have completed your weekly exercise goal.`;
     }
 
     return message;

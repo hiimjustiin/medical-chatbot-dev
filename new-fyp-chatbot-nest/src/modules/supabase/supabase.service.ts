@@ -76,23 +76,74 @@ export class SupabaseService {
     }
   }
 
-    // ✅ 根据 phone number 获取患者 ID
+  // ✅ Get patient ID by phone number
   async getUserIdByPhone(phone: string): Promise<number | null> {
-    const { data, error } = await this.getClient()
+    console.log(`🔍 [Supabase Service] Starting user search for phone: ${phone}`);
+    
+    // Normalize phone number format - remove plus sign
+    const normalizedPhone = phone.replace(/^\+/, '');
+    console.log(`📱 [Supabase Service] Normalized phone number: ${normalizedPhone}`);
+    
+    // First, query all patients to see what phone numbers are in the database
+    const { data: allPatients, error: listError } = await this.getClient()
       .from('patients')
-      .select('id')
-      .eq('phone_number', phone)
-      .maybeSingle();
+      .select('id, phone_number');
+    
+    if (listError) {
+      console.error(`❌ [Supabase Service] Failed to query all patients: ${listError.message}`);
+    } else {
+      console.log(`📋 [Supabase Service] All patients in the database:`, allPatients);
+    }
+    
+    // Try matching multiple formats
+    const searchFormats = [
+      normalizedPhone,           // 6589422640
+      `+${normalizedPhone}`,     // +6589422640
+      phone,                     // Original format +6589422640
+      phone.replace(/^\+/, '')   // Remove plus sign 6589422640
+    ];
+    
+    console.log(`🔍 [Supabase Service] Attempting to match formats:`, searchFormats);
+    
+    for (const format of searchFormats) {
+      // Use .select() instead of .maybeSingle() to handle duplicate records
+      const { data, error } = await this.getClient()
+        .from('patients')
+        .select('id')
+        .eq('phone_number', format);
 
-    if (error || !data) {
-      console.error('User not found by phone:', phone);
-      return null;
+      if (error) {
+        console.error(`❌ [Supabase Service] Error querying format ${format}: ${error.message}`);
+        continue;
+      }
+
+      if (data && data.length > 0) {
+        // If there are multiple matching records, select the first one (usually the earliest created)
+        const patientId = data[0].id;
+        console.log(`✅ [Supabase Service] Found user, ID: ${patientId}, Matched format: ${format}, Total matches: ${data.length}`);
+        
+        // Check if this user has workout data
+        const { data: workoutData, error: workoutError } = await this.getClient()
+          .from('workouts')
+          .select('*')
+          .eq('patient_id', patientId);
+        
+        if (workoutError) {
+          console.error(`❌ [Supabase Service] Failed to query workout data: ${workoutError.message}`);
+        } else {
+          console.log(`📊 [Supabase Service] Number of workout records for user ${patientId}: ${workoutData?.length || 0}`);
+          if (workoutData && workoutData.length > 0) {
+            console.log(`📊 [Supabase Service] Latest workout record:`, workoutData[workoutData.length - 1]);
+          }
+        }
+        
+        return patientId;
+      }
     }
 
-    return data.id;
+    console.log(`⚠️ [Supabase Service] User not found, tried all formats:`, searchFormats);
+    return null;
   }
-
-
 
   async insertParsedRecords(records: any[]): Promise<any[]> {
     const { data, error } = await this.supabase.from('tracker').insert(records);

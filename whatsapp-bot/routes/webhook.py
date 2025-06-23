@@ -4,10 +4,13 @@ from flask import Blueprint, request, jsonify, current_app, make_response
 from twilio.twiml.messaging_response import MessagingResponse
 import warnings
 import datetime
+import os
 
 # ✅ 写入调试日志到文件
 def log_to_file(msg):
-    with open("/tmp/whatsapp_debug.log", "a") as f:
+    # 使用当前目录下的日志文件，兼容 Windows 和 Linux
+    log_path = os.path.join(os.getcwd(), "whatsapp_debug.log")
+    with open(log_path, "a", encoding="utf-8") as f:
         timestamp = datetime.datetime.now().isoformat()
         f.write(f"[{timestamp}] {msg}\n")
 

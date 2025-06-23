@@ -31,6 +31,9 @@ export default function UploadReport() {
       const data = await res.json();
       if (res.ok) {
         toast.success(data.message || "Upload completed");
+        if (data.weeklyMessage) {
+          toast.info("Weekly report has been sent to patient's WhatsApp");
+        }
         setOpen(false);
         setPatientId("");
         setPhoneNumber("");
