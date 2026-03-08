@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash, Search, Bell } from "lucide-react";
+import { Trash, Search, Bell, Pencil } from "lucide-react";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -16,6 +16,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 function PatientListTable({ reload, setReload }) {
   const pagination = true;
@@ -27,6 +29,80 @@ function PatientListTable({ reload, setReload }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchInput, setSearchInput] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    phone_number: "",
+    age: "",
+    gender: "",
+    target_duration_week: "",
+    moderate_hr_min: "",
+    moderate_hr_max: "",
+    vigorous_hr_min: "",
+    vigorous_hr_max: "",
+    medical_condition: "",
+    disability_level: "",
+  });
+
+  const openEdit = (row) => {
+    setEditing(row);
+    setEditForm({
+      full_name: row.full_name || "",
+      phone_number: row.phone_number || "",
+      age: String(row.age || ""),
+      gender: row.gender || "",
+      target_duration_week: String(row.target_duration_week || ""),
+      moderate_hr_min: String(row.moderate_hr_min || ""),
+      moderate_hr_max: String(row.moderate_hr_max || ""),
+      vigorous_hr_min: String(row.vigorous_hr_min || ""),
+      vigorous_hr_max: String(row.vigorous_hr_max || ""),
+      medical_condition: row.medical_condition || "",
+      disability_level: row.disability_level || "",
+    });
+    setEditOpen(true);
+  };
+
+  const submitEdit = async () => {
+    try {
+      const updates = { ...editForm };
+      // cast numeric fields if present
+      ["age","target_duration_week","moderate_hr_min","moderate_hr_max","vigorous_hr_min","vigorous_hr_max"].forEach((k)=>{
+        if (updates[k] === "" || updates[k] === null || updates[k] === undefined) return;
+        const n = Number(updates[k]);
+        if (!Number.isNaN(n)) updates[k] = n;
+      });
+
+      // 调试信息
+      console.log('=== UPDATE PATIENT DEBUG ===');
+      console.log('Environment variables:');
+      console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      console.log('NEXT_PUBLIC_API_PORT:', process.env.NEXT_PUBLIC_API_PORT);
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+      const fullUrl = `${apiUrl}/api/data/update-patient`;
+      console.log('Full API URL:', fullUrl);
+      console.log('Request data:', { id: editing.id, updates });
+      
+      const res = await fetch(fullUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editing.id, updates })
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Update failed: ${res.status} ${txt}`);
+      }
+      toast.success("Patient updated");
+      setEditOpen(false);
+      setEditing(null);
+      setReload(true);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to update patient");
+    }
+  };
 
   const UploadReportButton = (props) => {
     const fileInputRef = useRef();
@@ -34,18 +110,56 @@ function PatientListTable({ reload, setReload }) {
     const handleFileChange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      if (!props.data.phone_number) {
+        toast.error("No phone number on this patient");
+        return;
+      }
       const formData = new FormData();
       formData.append("files", file);
-      formData.append("patientId", props.data.id);
+      formData.append("phone", props.data.phone_number);
+      
+      // 调试信息
+      console.log('=== UPLOAD WORKOUT DEBUG ===');
+      console.log('Environment variables:');
+      console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      console.log('NEXT_PUBLIC_API_PORT:', process.env.NEXT_PUBLIC_API_PORT);
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+      const fullUrl = `${apiUrl}/parser/upload-workout`;
+      console.log('Full API URL:', fullUrl);
+      console.log('File details:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+      console.log('Phone number:', props.data.phone_number);
+      
+      // FormData 内容检查
+      console.log('FormData contents:');
+      Array.from(formData.entries()).forEach(([key, value]) => {
+        console.log(`${key}:`, value);
+      });
+      
       try {
-        const res = await fetch("http://localhost:3005/parser/upload-workout", {
+        console.log('=== STARTING UPLOAD FETCH ===');
+        const res = await fetch(fullUrl, {
           method: "POST",
           body: formData,
         });
+        
+        console.log('=== UPLOAD RESPONSE ===');
+        console.log('Response status:', res.status);
+        console.log('Response ok:', res.ok);
         const data = await res.json();
+        console.log('Response data:', data);
         toast.success(data.message || "Upload completed");
       } catch (err) {
-        toast.error("Upload failed");
+        console.log('=== UPLOAD ERROR ===');
+        console.error('Error details:', err);
+        console.log('Error name:', err.name);
+        console.log('Error message:', err.message);
+        console.log('Error stack:', err.stack);
+        toast.error(`Upload failed: ${err.message}`);
       }
     };
 
@@ -72,6 +186,13 @@ function PatientListTable({ reload, setReload }) {
   const CustomButtons = (props) => {
     return (
       <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => openEdit(props.data)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
         <AlertDialog>
           <AlertDialogTrigger>
             <Button variant="destructive" size="sm">
@@ -102,7 +223,7 @@ function PatientListTable({ reload, setReload }) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => sendNotification(props.data.patient_id)}
+          onClick={() => sendNotification(props.data)}
         >
           <Bell className="h-4 w-4" />
         </Button>
@@ -140,7 +261,7 @@ function PatientListTable({ reload, setReload }) {
         throw new Error("Environment variable NEXT_PUBLIC_API_URL is not defined");
       }
 
-      const fullUrl = `${apiUrl}/get-patients`;
+      const fullUrl = `${apiUrl}/api/data/get-patients`;
       console.log("Fetching data from:", fullUrl);
 
       const response = await fetch(fullUrl);
@@ -171,7 +292,7 @@ function PatientListTable({ reload, setReload }) {
   const deletePatient = async (patientId) => {
     try {
       const response = await fetch(     
-        `${process.env.NEXT_PUBLIC_API_URL}/delete-patient`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/data/delete-patient`,
         {
           method: "DELETE",
           headers: {
@@ -192,17 +313,18 @@ function PatientListTable({ reload, setReload }) {
     }
   };
 
-  const sendNotification = async (patientId) => {
+  const sendNotification = async (patient) => {
     try {
-      const response = await fetch("/notifications/send", {
+      const response = await fetch("http://localhost:5000/notifications/send", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userId: patientId, // Using patientId here
-            title: "FitBuddy: Exercise Time!",
-            body: "Click on me to find something exciting to do. Get up and let's get moving!",
+            phone_number: patient.phone_number,
+            message: `Hi ${patient.full_name}! 👋\n\n这是您的运动提醒！🏃‍♀️\n\n是时候进行一些运动来保持健康了。您可以：\n• 散步15-30分钟\n• 做一些简单的伸展运动\n• 进行轻度有氧运动\n\n记住，任何运动都比不运动要好！💪\n\n如果您有任何问题，请随时联系我们。`,
+            template_name: "hello_world",
+            template_lang: "en_US"
           }),
         }
       );
@@ -212,10 +334,14 @@ function PatientListTable({ reload, setReload }) {
       }
 
       const result = await response.json();
-      toast.success("Notification sent successfully");
+      if (result.status === "success") {
+        toast.success(`通知已发送给 ${patient.full_name}`);
+      } else {
+        toast.error("通知发送失败");
+      }
     } catch (error) {
       console.error("Error sending notification:", error);
-      toast.error("Failed to send notification");
+      toast.error("发送通知失败");
     }
   };
 
@@ -262,6 +388,63 @@ function PatientListTable({ reload, setReload }) {
             paginationPageSizeSelector={paginationPageSizeSelector}
             onGridReady={(params) => (gridRef.current = params)}
           />
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Patient</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label>Name</label>
+                <Input value={editForm.full_name} onChange={(e)=>setEditForm({...editForm, full_name: e.target.value})} />
+              </div>
+              <div>
+                <label>Phone</label>
+                <Input value={editForm.phone_number} onChange={(e)=>setEditForm({...editForm, phone_number: e.target.value})} />
+              </div>
+              <div>
+                <label>Age</label>
+                <Input value={editForm.age} onChange={(e)=>setEditForm({...editForm, age: e.target.value})} />
+              </div>
+              <div>
+                <label>Gender</label>
+                <Input value={editForm.gender} onChange={(e)=>setEditForm({...editForm, gender: e.target.value})} />
+              </div>
+              <div>
+                <label>Weekly Target (min)</label>
+                <Input value={editForm.target_duration_week} onChange={(e)=>setEditForm({...editForm, target_duration_week: e.target.value})} />
+              </div>
+              <div>
+                <label>Moderate HR Min</label>
+                <Input value={editForm.moderate_hr_min} onChange={(e)=>setEditForm({...editForm, moderate_hr_min: e.target.value})} />
+              </div>
+              <div>
+                <label>Moderate HR Max</label>
+                <Input value={editForm.moderate_hr_max} onChange={(e)=>setEditForm({...editForm, moderate_hr_max: e.target.value})} />
+              </div>
+              <div>
+                <label>Vigorous HR Min</label>
+                <Input value={editForm.vigorous_hr_min} onChange={(e)=>setEditForm({...editForm, vigorous_hr_min: e.target.value})} />
+              </div>
+              <div>
+                <label>Vigorous HR Max</label>
+                <Input value={editForm.vigorous_hr_max} onChange={(e)=>setEditForm({...editForm, vigorous_hr_max: e.target.value})} />
+              </div>
+              <div className="col-span-2">
+                <label>Medical Condition</label>
+                <Input value={editForm.medical_condition} onChange={(e)=>setEditForm({...editForm, medical_condition: e.target.value})} />
+              </div>
+              <div className="col-span-2">
+                <label>Disability Level</label>
+                <Input value={editForm.disability_level} onChange={(e)=>setEditForm({...editForm, disability_level: e.target.value})} />
+              </div>
+              <div className="col-span-2 flex justify-end gap-2 mt-2">
+                <Button variant="outline" onClick={()=>setEditOpen(false)}>Cancel</Button>
+                <Button onClick={submitEdit}>Save</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Delete, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Delete, HttpException, HttpStatus, Put } from '@nestjs/common';
 import { PatientService } from './patient.service';
 
 @Controller('api/data') // ✅ 保持原路径兼容
@@ -64,6 +64,19 @@ export class PatientController {
         success: true,
         message: 'Patient deleted successfully',
       };
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Put('update-patient')
+  async updatePatient(@Body('id') id: string, @Body('updates') updates: any) {
+    try {
+      if (!id || !updates || typeof updates !== 'object') {
+        throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
+      }
+      const result = await this.patientService.updatePatient(id, updates);
+      return { success: true, patient: result.patient };
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

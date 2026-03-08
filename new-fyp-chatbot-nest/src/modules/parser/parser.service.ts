@@ -25,15 +25,65 @@ export class ParserService {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   async parseWorkoutData(fileContent: string): Promise<WorkoutData[]> {
-    const lines = fileContent.trim().split('\n');
+    const lines = fileContent.trim().split(/\r?\n/);
     const results: WorkoutData[] = [];
 
+    if (lines.length === 0) {
+      this.logger.warn('文件内容为空');
+      return results;
+    }
+
+    const header = lines[0].trim();
+
+    // 格式1：TSV 心率明细（date\theartrate\tsubject_code）
+    const isTSVHeartRate = /\bdate\b\s*\t\s*\bheartrate\b\s*\t\s*\bsubject_code\b/i.test(header);
+
+    if (isTSVHeartRate) {
+      // 将心率按天聚合为WorkoutData，其他数值字段用0占位（后续由统计服务计算）
+      const byDay: Record<string, HeartRateData[]> = {};
+      let subjectCode = '';
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line || !line.trim()) continue;
+        const parts = line.split('\t');
+        if (parts.length < 3) continue;
+        const [dateStr, hrStr, subj] = parts;
+        if (!subjectCode && subj) subjectCode = subj.trim();
+        const hr = Number(hrStr);
+        if (!isFinite(hr)) continue;
+        const iso = dateStr.trim();
+        // 仅保留有效ISO字符串
+        if (!iso) continue;
+        const day = iso.split('T')[0];
+        if (!byDay[day]) byDay[day] = [];
+        byDay[day].push({ date: iso, heartrate: hr });
+      }
+
+      Object.entries(byDay).forEach(([day, hrList]) => {
+        // 保持时间顺序
+        hrList.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        results.push({
+          userID: subjectCode || 'unknown',
+          startDate: `${day}T00:00:00Z`,
+          duration: 0,
+          steps: 0,
+          distance: 0,
+          calories: 0,
+          moderateIntensity: 0,
+          vigorousIntensity: 0,
+          heartrate: hrList,
+        });
+      });
+
+      return results;
+    }
+
+    // 格式2：原有分号分隔记录行
     if (lines.length <= 1) {
       this.logger.warn('TXT 文件中没有有效的数据行');
       return results;
     }
 
-    // 跳过表头
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
       if (!line.trim()) continue;
@@ -47,12 +97,12 @@ export class ParserService {
         calories,
         moderateIntensity,
         vigorousIntensity,
-        heartrateJson
+        heartrateJson,
       ] = line.split(';');
 
       try {
         const heartrate = heartrateJson ? JSON.parse(heartrateJson) : [];
-        
+
         results.push({
           userID,
           startDate,
@@ -62,7 +112,7 @@ export class ParserService {
           calories: parseFloat(calories),
           moderateIntensity: parseInt(moderateIntensity),
           vigorousIntensity: parseInt(vigorousIntensity),
-          heartrate
+          heartrate,
         });
       } catch (error) {
         this.logger.error(`解析第 ${i + 1} 行时出错: ${error.message}`);
@@ -133,6 +183,7 @@ export class ParserService {
   async processWorkoutsBatch(workoutList: WorkoutData[], patientId: string) {
     try {
       // 获取患者信息（仅用于验证患者存在）
+      // patientId 可能是 subject_code 或实际的数据库 ID
       const patient = await this.supabaseService.getPatientById(patientId);
       if (!patient) {
         throw new Error(`Patient not found: ${patientId}`);

@@ -521,14 +521,31 @@ export class SupabaseService {
   }
 
   async getPatientById(patientId: string) {
-    const { data, error } = await this.supabase
+    // 首先尝试通过 subject_code 查找
+    let { data, error } = await this.supabase
       .from('patients')
       .select('*')
-      .eq('id', patientId)
-      .single();
+      .eq('subject_code', patientId)
+      .maybeSingle();
+
+    // 如果通过 subject_code 没找到，再尝试通过 id 查找
+    if (!data && !error) {
+      const { data: dataById, error: errorById } = await this.supabase
+        .from('patients')
+        .select('*')
+        .eq('id', patientId)
+        .maybeSingle();
+      
+      data = dataById;
+      error = errorById;
+    }
 
     if (error) {
       throw new Error(`获取患者信息失败: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error(`患者不存在: ${patientId}`);
     }
 
     return data;

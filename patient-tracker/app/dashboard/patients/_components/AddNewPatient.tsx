@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
-import FileUpload from "./FileUpload";
+
 
 type Inputs = {
   full_name: string;
@@ -23,7 +23,6 @@ type Inputs = {
   vigorous_hr_min: string;
   vigorous_hr_max: string;
   target_duration_week: string;
-  prompt_times: string;
   medical_condition: string;
   disability_level: string;
 };
@@ -34,7 +33,7 @@ type AddNewPatientProps = {
 
 function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
   const [open, setOpen] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+
   const {
     register,
     handleSubmit,
@@ -45,16 +44,10 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
   const moderate_hr_min = watch("moderate_hr_min");
   const vigorous_hr_min = watch("vigorous_hr_min");
 
-  const handleFilesUploaded = (files: File[]) => {
-    setUploadedFiles(files);
-  };
+
 
   const addPatient = async (data: Inputs) => {
     try {
-      const promptTimesArray = data.prompt_times
-        .split(",")
-        .map((time) => time.trim());
-
       const patientDetails = {
         full_name: data.full_name,
         gender: data.gender,
@@ -65,13 +58,12 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
         vigorous_hr_min: data.vigorous_hr_min,
         vigorous_hr_max: data.vigorous_hr_max,
         target_duration_week: data.target_duration_week,
-        prompt_times: promptTimesArray,
         medical_condition: data.medical_condition,
         disability_level: data.disability_level,
       };
 
       const addPatientResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/add-patient`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/data/add-patient`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -104,36 +96,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
     try {
       const patientId = await addPatient(data); // ✅ 添加病人，只为写入 Supabase
 
-      if (uploadedFiles.length > 0) {
-        const formData = new FormData();
-
-      // ✅ 只传 phone 和单个文件，后端根据 phone 查 userId/profileID
-        formData.append("phone", data.phone_number);
-        formData.append("files", uploadedFiles[0]); // 只传第一个 txt 文件
-
-        const backendBaseUrl =
-          process.env.NEXT_PUBLIC_API_URL?.replace("/api/data", "") || "";
-        console.log("🚀 onSubmit triggered");
-
-        console.log("🚀 Uploading to:", `${backendBaseUrl}/parser/upload-and-send`);
-        console.log("📦 FormData phone:", formData.get("phone"));
-        console.log("📦 FormData file:", formData.get("files"));
-
-
-        const fileUploadResponse = await fetch(
-          `${backendBaseUrl}/parser/upload-and-send`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
- 
-        if (fileUploadResponse.ok) {
-          toast.success("Files parsed and uploaded successfully.");
-        } else {
-          toast.error("Failed to parse and upload files.");
-        }
-      }
+      
 
       onPatientAdded(); // 刷新列表
       setOpen(false);   // 关闭弹窗
@@ -270,16 +233,6 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-                <div className="py-3" id="prompt_times_field">
-                  <label>Prompt Times</label>
-                  <Input
-                    placeholder="Enter Prompt Times (comma-separated)"
-                    {...register("prompt_times", { required: true })}
-                  />
-                  {errors.prompt_times && (
-                    <p className="text-red-500">This field is required</p>
-                  )}
-                </div>
                 <div className="py-3" id="medical_condition_field">
                   <label>Medical Condition</label>
                   <Input
@@ -305,10 +258,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     <p className="text-red-500">This field is required</p>
                   )}
                 </div>
-                <div className="py-3" id="file_upload_field">
-                  <label>Upload Files</label>
-                  <FileUpload onFilesUploaded={handleFilesUploaded} />
-                </div>
+
 
                 <div className="flex gap-3 items-center justify-end mt-5">
                   <Button type="submit">Add</Button>

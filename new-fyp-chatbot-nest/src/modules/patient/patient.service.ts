@@ -82,4 +82,24 @@ export class PatientService {
       throw new Error(`Failed to deregister patient: ${error.message}`);
     }
   }
+
+  async updatePatient(patientId: any, updates: any) {
+    try {
+      const { data, error } = await this.supabaseService
+        .getClient()
+        .from('patients')
+        .update(updates)
+        .eq('id', patientId)
+        .select('*')
+        .single();
+
+      if (error) {
+        throw new Error(`Error updating patient: ${error.message}`);
+      }
+
+      return { success: true, patient: data };
+    } catch (error) {
+      throw new Error(`Failed to update patient: ${error.message}`);
+    }
+  }
 }

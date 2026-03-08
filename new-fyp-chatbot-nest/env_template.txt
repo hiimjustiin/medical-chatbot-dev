@@ -1,0 +1,17 @@
+# NestJS 后端环境变量配置
+# 请将此内容复制到 .env 文件中
+
+# Supabase 配置 (必需)
+SUPABASE_URL=your_supabase_url_here
+SUPABASE_API_KEY=your_supabase_api_key_here
+
+# OpenAI GPT 配置 (必需)
+OPENAI_API_KEY=your_openai_api_key_here
+
+# 服务器配置
+PORT=3000
+NODE_ENV=development
+
+# 其他配置 (可选)
+# 添加其他需要的环境变量...
+

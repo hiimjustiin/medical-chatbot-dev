@@ -24,7 +24,20 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+AI医疗聊天机器人后端服务 - 基于NestJS + GPT-4 + Redis缓存
+
+### ✨ 核心功能
+- 🤖 **GPT-4智能对话**: 基于用户运动历史提供个性化健康建议
+- 📊 **运动数据分析**: 实时处理和分析运动追踪数据
+- 💾 **Redis缓存系统**: 高性能缓存，减少API调用和数据库查询
+- 🗄️ **Supabase集成**: PostgreSQL数据库，支持实时数据同步
+- 📱 **多渠道支持**: 支持Twilio WhatsApp webhook和直接JSON API
+
+### 🚀 性能优化
+- Redis缓存周报数据 (24小时TTL)
+- GPT响应缓存 (1小时TTL)，避免重复查询
+- 用户会话缓存 (30分钟TTL)
+- 智能缓存失效策略
 
 ## Installation
 
