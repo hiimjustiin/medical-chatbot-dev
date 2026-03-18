@@ -1,141 +1,141 @@
 # Whatsapp Bot Frontend for Medical Chatbot
 
-这个文件夹包含了医疗聊天机器人应用的WhatsApp机器人前端实现。
+This folder contains the WhatsApp bot frontend implementation for the Medical Chatbot application.
 
-## 支持的API提供商
+## Supported API Providers
 
-- ✅ **Meta WhatsApp Business API** (推荐)
-- ✅ **Twilio WhatsApp API** (备选)
+- ✅ **Meta WhatsApp Business API** (Recommended)
+- ✅ **Twilio WhatsApp API** (Alternative)
 
-## 先决条件
+## Prerequisites
 
-### Meta WhatsApp Business API (推荐)
-1. 访问 [Meta for Developers](https://developers.facebook.com/)
-2. 创建WhatsApp Business应用
-3. 获取必要的token和ID
+### Meta WhatsApp Business API (Recommended)
+1. Visit [Meta for Developers](https://developers.facebook.com/)
+2. Create a WhatsApp Business App
+3. Obtain the necessary tokens and IDs
 
-详细设置请参考: [META_SETUP.md](./META_SETUP.md)
+For detailed setup, please refer to: [META_SETUP.md](./META_SETUP.md)
 
-### Twilio API (备选)
-1. 访问 [Twilio](https://www.twilio.com/en-us) 获取账户
-2. 获取Account SID和Auth Token
+### Twilio API (Alternative)
+1. Visit [Twilio](https://www.twilio.com/en-us) to get an account
+2. Obtain your Account SID and Auth Token
 
-## 设置
+## Setup
 
-### 1. 安装依赖
+### 1. Install Dependencies
 
-**在此目录中**运行以下命令安装所需包。建议使用Python虚拟环境：
+Run the following command **in this directory** to install the required packages. Using a Python virtual environment is recommended:
 
 ```shell
 pip install -r requirements.txt
 ```
 
-### 2. 环境变量配置
+### 2. Environment Variable Configuration
 
-创建`.env`文件并配置必要的环境变量：
+Create `.env` file and configure the necessary environment variables:
 
-#### Meta WhatsApp Business API (推荐)
+#### Meta WhatsApp Business API (Recommended)
 ```bash
-# Meta API配置
+# Meta API Configuration
 META_ACCESS_TOKEN=your_meta_access_token_here
 META_VERIFY_TOKEN=your_custom_verify_token_here
 META_PHONE_NUMBER_ID=your_phone_number_id_here
 META_BUSINESS_ACCOUNT_ID=your_business_account_id_here
 
-# 通用配置
+# General Configuration
 FORWARD_URL=http://localhost:3005/api/data/chat/message
 
-# 使用Meta API
+# Use Meta API
 USE_META_API=true
 ```
 
-#### Twilio API (备选)
+#### Twilio API (Alternative)
 ```bash
-# Twilio配置
+# Twilio Configuration
 TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
 TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
 TWILIO_WHATSAPP_NUMBER=whatsapp:+1234567890
 
-# 通用配置
+# General Configuration
 FORWARD_URL=http://localhost:3005/api/data/chat/message
 
-# 使用Twilio API
+# Use Twilio API
 USE_META_API=false
 ```
 
-### 3. Webhook设置
+### 3. Webhook Setup
 
 #### Meta API
-1. 在Meta开发者控制台设置webhook URL: `{ROOT_URL}/webhook`
-2. 设置验证令牌与`.env`文件中的`META_VERIFY_TOKEN`一致
-3. 订阅必要的字段: `messages`, `message_deliveries`, `message_reads`
+1. Set the webhook URL in the Meta Developer Console: `{ROOT_URL}/webhook`
+2. Set the Verify Token to match the `META_VERIFY_TOKEN` in your `.env` file
+3. Subscribe to the necessary fields: `messages`, `message_deliveries`, `message_reads`
 
 #### Twilio API
-1. 在Twilio控制台设置webhook URL: `{ROOT_URL}/webhook`
-2. 确保webhook可以接收POST请求
+1. Set the webhook URL in the Twilio Console: `{ROOT_URL}/webhook`
+2. Ensure the webhook can receive POST requests
 
-## 测试配置
+## Test Configuration
 
-运行测试脚本验证配置：
+Run the test script to verify your configuration:
 
 ```bash
 python test_meta_api.py
 ```
 
-## 启动WhatsApp机器人
+## Start the WhatsApp Bot
 
-运行以下命令：
+Run the following command:
 
 ```shell
 python main.py
 ```
 
-## 功能特性
+## Features
 
-- 🔄 自动切换Meta/Twilio API
-- 📨 接收和发送WhatsApp消息
-- 🔐 Webhook验证和签名验证
-- 📊 详细的操作日志
-- 🚀 消息转发到后端API
-- 📱 支持模板消息
+- 🔄 Automatic switching between Meta/Twilio APIs
+- 📨 Send and receive WhatsApp messages
+- 🔐 Webhook validation and signature verification
+- 📊 Detailed operational logs
+- 🚀 Forwarding messages to the Backend API
+- 📱 Support for Template Messages
 
-## 文件结构
+## File Structure
 
 ```
 whatsapp-bot/
-├── config.py                 # 配置文件
-├── main.py                   # 主应用文件
-├── meta_whatsapp_service.py  # Meta WhatsApp服务
-├── routes/                   # 路由文件
-│   ├── webhook.py           # Webhook处理
-│   ├── send.py              # 消息发送
-│   └── __init__.py          # 路由注册
-├── requirements.txt          # Python依赖
-├── META_SETUP.md            # Meta API设置指南
-├── test_meta_api.py         # 配置测试脚本
-└── README.md                # 本文件
+├── config.py                 # Configuration file
+├── main.py                   # Main application file
+├── meta_whatsapp_service.py  # Meta WhatsApp service logic
+├── routes/                   # Routing files
+│   ├── webhook.py            # Webhook handling
+│   ├── send.py               # Message sending logic
+│   └── __init__.py           # Route registration
+├── requirements.txt          # Python dependencies
+├── META_SETUP.md             # Meta API setup guide
+├── test_meta_api.py          # Configuration test script
+└── README.md                 # This file
 ```
 
-## 故障排除
+## Troubleshooting
 
-### 常见问题
+### Common Issues
 
-1. **Webhook验证失败**
-   - 检查验证令牌是否正确
-   - 确保webhook URL可公开访问
+1. **Webhook Verification Failed**
+   - Check if the Verify Token is correct
+   - Ensure the webhook URL is publicly accessible (e.g., using ngrok for local dev)
 
-2. **消息发送失败**
-   - 验证API token是否有效
-   - 检查电话号码格式
+2. **Message Sending Failed**
+   - Verify that the API token is still valid
+   - Check the phone number format (must include country code)
 
-3. **配置错误**
-   - 运行`python test_meta_api.py`检查配置
-   - 查看日志文件`whatsapp_debug.log`
+3. **Configuration Errors**
+   - Run `python test_meta_api.py` to check settings
+   - Review the log file: `whatsapp_debug.log`
 
-## 支持
+## Support
 
-如需帮助，请：
-1. 检查日志文件
-2. 运行测试脚本
-3. 参考设置指南
-4. 确认环境变量配置
+If you need help:
+1. Check the log files
+2. Run the test scripts
+3. Refer to the setup guides
+4. Confirm your environment variable configurations

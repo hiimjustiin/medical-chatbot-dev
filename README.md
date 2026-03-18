@@ -1,181 +1,181 @@
-# 医疗聊天机器人系统 (Medical Chatbot System)
+# Medical Chatbot System
 
-一个完整的医疗健康管理平台，包含患者追踪仪表板、WhatsApp自动消息系统和AI驱动的个性化健康建议。
+A comprehensive medical health management platform featuring a patient tracking dashboard, a WhatsApp automated messaging system, and AI-driven personalised health recommendations.
 
-## 🏗️ 项目架构
+## 🏗️ Project Architecture
 
-本项目采用微服务架构，包含三个主要组件：
+This project adopts a microservices architecture consisting of three main components:
 
-### 1. 后端服务 (NestJS)
-- **位置**: `new-fyp-chatbot-nest/`
-- **技术栈**: NestJS, TypeScript, Supabase
-- **功能**: RESTful API, 患者数据管理, 运动计划分配, GPT集成
+### 1. Backend Service (NestJS)
+- **Location**: `new-fyp-chatbot-nest/`
+- **Tech Stack**: NestJS, TypeScript, Supabase
+- **Functions**: RESTful API, patient data management, exercise plan assignment, GPT integration
 
-### 2. 前端仪表板 (Next.js)
-- **位置**: `patient-tracker/`
-- **技术栈**: Next.js 14, React, Tailwind CSS, Radix UI
-- **功能**: 患者管理界面, 数据可视化, 报告上传
+### 2. Frontend Dashboard (Next.js)
+- **Location**: `patient-tracker/`
+- **Tech Stack**: Next.js 14, React, Tailwind CSS, Radix UI
+- **Functions**: Patient management interface, data visualisation, report uploading
 
-### 3. WhatsApp机器人 (Python)
-- **位置**: `whatsapp-bot/`
-- **技术栈**: Python, Flask, Meta WhatsApp API
-- **功能**: 自动消息发送, 健康提醒, 个性化沟通
+### 3. WhatsApp Bot (Python)
+- **Location**: `whatsapp-bot/`
+- **Tech Stack**: Python, Flask, Meta WhatsApp API
+- **Functions**: Automated message sending, health reminders, personalised communication
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 环境要求
+### Prerequisites
 - Node.js 18+
 - Python 3.8+
-- Supabase账户
-- Meta WhatsApp Business API访问权限
+- Supabase account
+- Meta WhatsApp Business API access permissions
 
-### 安装和运行
+### Installation and Execution
 
-#### 1. 后端服务
+#### 1. Backend Service
 ```bash
 cd new-fyp-chatbot-nest
 npm install
 npm run start:dev
 ```
 
-#### 2. 前端仪表板
+#### 2. Frontend Dashboard
 ```bash
 cd patient-tracker
 npm install
 npm run dev
 ```
 
-#### 3. WhatsApp机器人
+#### 3. WhatsApp Bot
 ```bash
 cd whatsapp-bot
 pip install -r requirements.txt
 python main.py
 ```
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 medical-chatbot-dev/
-├── new-fyp-chatbot-nest/          # 后端API服务
+├── new-fyp-chatbot-nest/          # Backend API Service
 │   ├── src/modules/
-│   │   ├── app/                   # 应用配置
-│   │   ├── exercise/              # 运动管理
-│   │   ├── gpt/                   # AI集成
-│   │   ├── patient/               # 患者管理
-│   │   └── supabase/              # 数据库服务
+│   │   ├── app/                   # App Configuration
+│   │   ├── exercise/              # Exercise Management
+│   │   ├── gpt/                   # AI Integration
+│   │   ├── patient/               # Patient Management
+│   │   └── supabase/              # Database Services
 │   └── package.json
-├── patient-tracker/               # 前端仪表板
+├── patient-tracker/               # Frontend Dashboard
 │   ├── app/                       # Next.js App Router
-│   ├── components/                # UI组件
+│   ├── components/                # UI Components
 │   └── package.json
-└── whatsapp-bot/                  # WhatsApp机器人
-    ├── routes/                    # API路由
-    ├── config.py                  # 配置管理
+└── whatsapp-bot/                  # WhatsApp Bot
+    ├── routes/                    # API Routes
+    ├── config.py                  # Configuration Management
     └── requirements.txt
 ```
 
-## 🔧 配置说明
+## 🔧 Configuration Instructions
 
-### 环境变量配置
-每个子目录都包含环境模板文件：
-- `new-fyp-chatbot-nest/env_template.txt` - 后端环境变量
-- `patient-tracker/create_env.py` - 前端环境配置
-- `whatsapp-bot/create_env.py` - 机器人环境配置
+### Environment Variables
+Each subdirectory contains environment template files:
+- `new-fyp-chatbot-nest/env_template.txt` - Backend env variables
+- `patient-tracker/create_env.py` - Frontend env configuration
+- `whatsapp-bot/create_env.py` - Bot env configuration
 
-### 数据库配置
-项目使用Supabase作为数据库后端，需要配置以下信息：
+### Database Configuration
+The project uses Supabase as the database backend. You need to configure:
 - SUPABASE_URL
 - SUPABASE_ANON_KEY
-- 数据库表结构（参考database.sql）
+- Database table structure (refer to database.sql)
 
-## 🤖 AI个性化回复系统
+## 🤖 AI Personalised Response System
 
-### 核心功能
-1. **患者画像分析** - 基于历史数据构建患者健康档案
-2. **个性化建议** - 根据患者状况提供定制化健康建议
-3. **智能提醒** - 基于行为模式的智能提醒系统
-4. **情感分析** - 分析患者情绪状态调整沟通策略
+### Core Features
+1. **Patient Profiling** - Build health profiles based on historical data
+2. **Personalised Advice** - Provide customised health suggestions based on patient conditions
+3. **Smart Reminders** - Intelligent reminder system based on behaviour patterns
+4. **Sentiment Analysis** - Analyse patient emotional states to adjust communication strategies
 
-### 实现机制
-- **GPT集成**: 通过gpt模块实现AI对话
-- **数据驱动**: 基于患者运动数据、健康指标和历史互动
-- **上下文感知**: 维护对话上下文提供连贯体验
+### Implementation Mechanism
+- **GPT Integration**: AI dialogue implemented via the GPT module
+- **Data-Driven**: Based on patient exercise data, health metrics, and historical interactions
+- **Context-Awareness**: Maintains conversation context to provide a coherent experience
 
-## 📊 数据模型
+## 📊 Data Model
 
-### 主要数据表
-- `patients` - 患者基本信息
-- `exercises` - 运动计划数据
-- `workouts` - 运动记录
-- `messages` - 沟通历史
-- `health_metrics` - 健康指标
+### Main Tables
+- `patients` - Basic patient information
+- `exercises` - Exercise plan data
+- `workouts` - Exercise records (logs)
+- `messages` - Communication history
+- `health_metrics` - Health indicators
 
-### 数据关系
-患者 ↔ 运动计划 ↔ 运动记录 ↔ 健康指标 ↔ 沟通历史
+### Data Relationships
+Patient ↔ Exercise Plan ↔ Exercise Records ↔ Health Metrics ↔ Communication History
 
-## 🔒 安全特性
+## 🔒 Security Features
 
-- JWT身份验证
-- 数据加密存储
-- API访问控制
-- 输入验证和清理
+- JWT Authentication
+- Encrypted data storage
+- API Access Control
+- Input validation and sanitisation
 
-## 📈 监控和日志
+## 📈 Monitoring and Logs
 
-- 应用性能监控
-- 错误日志记录
-- 用户行为分析
-- 系统健康检查
+- Application Performance Monitoring (APM)
+- Error logging
+- User behaviour analysis
+- System health checks
 
-## 🧪 测试
+## 🧪 Testing
 
-### 运行测试
+### Running Tests
 ```bash
-# 后端测试
+# Backend Tests
 cd new-fyp-chatbot-nest
 npm test
 
-# 前端测试  
+# Frontend Tests
 cd patient-tracker
 npm test
 
-# WhatsApp机器人测试
+# WhatsApp Bot Tests
 cd whatsapp-bot
 python -m pytest
 ```
 
-## 🚢 部署
+## 🚢 Deployment
 
-### 生产环境部署
-1. **后端**: 使用PM2或Docker部署
-2. **前端**: Vercel或Netlify部署
-3. **机器人**: 云服务器部署
+### Production Deployment
+1. **Backend**: Deploy using PM2 or Docker.
+2. **Frontend**: Deploy via Vercel or Netlify.
+3. **Bot**: Deploy on a Cloud Server.
 
-### 环境配置
-- 生产环境变量设置
-- SSL证书配置
-- 数据库备份策略
-- 监控告警设置
+### Environment Configuration
+- Production environment variable settings
+- SSL Certificate configuration
+- Database backup strategy
+- Monitoring and alert settings
 
-## 🤝 贡献指南
+## 🤝 Contribution Guide
 
-1. Fork项目
-2. 创建功能分支
-3. 提交更改
-4. 推送到分支
-5. 创建Pull Request
+1. Fork the project
+2. Create a feature branch
+3. Commit changes
+4. Push to the branch
+5. Create a Pull Request
 
-## 📄 许可证
+## 📄 License
 
-本项目采用MIT许可证 - 查看LICENSE文件了解详情。
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 📞 支持
+## 📞 Support
 
-如有问题或建议，请通过以下方式联系：
-- 创建Issue
-- 发送邮件至项目维护者
-- 查看文档获取更多信息
+For questions or suggestions, please contact us via:
+- Creating an Issue
+- Emailing the project maintainer
+- Checking the documentation for more information
 
 ---
 
-**注意**: 本项目涉及医疗健康数据，请确保遵守相关隐私法规和数据保护法律。
+**Note**: This project involves medical health data; please ensure compliance with relevant privacy regulations and data protection laws.
