@@ -19,7 +19,7 @@ This project adopts a microservices architecture consisting of three main compon
 ### 3. WhatsApp Bot (Python)
 - **Location**: `whatsapp-bot/`
 - **Tech Stack**: Python, Flask, Meta WhatsApp API
-- **Functions**: Automated message sending, health reminders, personalised communication.
+- **Functions**: Automated message sending, health reminders, personalised communication
 
 ## 🚀 Quick Start
 
@@ -99,7 +99,7 @@ The project uses Supabase as the database backend. You need to configure:
 ### Implementation Mechanism
 - **GPT Integration**: AI dialogue implemented via the GPT module
 - **Data-Driven**: Based on patient exercise data, health metrics, and historical interactions
-- **Context-Awareness**: Maintains conversation context to provide a coherent experience.
+- **Context-Awareness**: Maintains conversation context to provide a coherent experience
 
 ## 📊 Data Model
 
