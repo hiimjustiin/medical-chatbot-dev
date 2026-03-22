@@ -25,6 +25,7 @@ type Inputs = {
   target_duration_week: string;
   medical_condition: string;
   disability_level: string;
+  prompt_time: string;
 };
 
 type AddNewPatientProps = {
@@ -60,6 +61,7 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
         target_duration_week: data.target_duration_week,
         medical_condition: data.medical_condition,
         disability_level: data.disability_level,
+        prompt_times: [data.prompt_time],
       };
 
       const addPatientResponse = await fetch(
@@ -161,6 +163,17 @@ function AddNewPatient({ onPatientAdded }: AddNewPatientProps) {
                     {errors.phone_number && (
                       <p className="text-red-500">This field is required</p>
                     )}
+                </div>
+                <div className="py-3" id="prompt_time_field">
+                  <label className="font-medium">Preferred Notification Time</label>
+                  <Input
+                    type="time"
+                    {...register("prompt_time", { required: true })}
+                    defaultValue="08:00" 
+                  />
+                  {errors.prompt_time && (
+                    <p className="text-red-500">Please select a notification time</p>
+                  )}
                 </div>
                 <div className="py-3" id="min_moderate_hr_field">
                   <label>Moderate Heart Rate (Min)</label>
