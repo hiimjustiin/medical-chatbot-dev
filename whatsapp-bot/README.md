@@ -10,6 +10,7 @@ This folder contains the WhatsApp bot frontend implementation for the Medical Ch
 ## Prerequisites
 
 ### Meta WhatsApp Business API (Recommended)
+
 1. Visit [Meta for Developers](https://developers.facebook.com/)
 2. Create a WhatsApp Business App
 3. Obtain the necessary tokens and IDs
@@ -17,6 +18,7 @@ This folder contains the WhatsApp bot frontend implementation for the Medical Ch
 For detailed setup, please refer to: [META_SETUP.md](./META_SETUP.md)
 
 ### Twilio API (Alternative)
+
 1. Visit [Twilio](https://www.twilio.com/en-us) to get an account
 2. Obtain your Account SID and Auth Token
 
@@ -35,6 +37,7 @@ pip install -r requirements.txt
 Create `.env` file and configure the necessary environment variables:
 
 #### Meta WhatsApp Business API (Recommended)
+
 ```bash
 # Meta API Configuration
 META_ACCESS_TOKEN=your_meta_access_token_here
@@ -50,6 +53,7 @@ USE_META_API=true
 ```
 
 #### Twilio API (Alternative)
+
 ```bash
 # Twilio Configuration
 TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
@@ -66,11 +70,13 @@ USE_META_API=false
 ### 3. Webhook Setup
 
 #### Meta API
+
 1. Set the webhook URL in the Meta Developer Console: `{ROOT_URL}/webhook`
 2. Set the Verify Token to match the `META_VERIFY_TOKEN` in your `.env` file
 3. Subscribe to the necessary fields: `messages`, `message_deliveries`, `message_reads`
 
 #### Twilio API
+
 1. Set the webhook URL in the Twilio Console: `{ROOT_URL}/webhook`
 2. Ensure the webhook can receive POST requests
 
@@ -121,21 +127,25 @@ whatsapp-bot/
 ### Common Issues
 
 1. **Webhook Verification Failed**
+
    - Check if the Verify Token is correct
    - Ensure the webhook URL is publicly accessible (e.g., using ngrok for local dev)
-
 2. **Message Sending Failed**
+
    - Verify that the API token is still valid
    - Check the phone number format (must include country code)
-
 3. **Configuration Errors**
+
    - Run `python test_meta_api.py` to check settings
    - Review the log file: `whatsapp_debug.log`
 
 ## Support
 
 If you need help:
+
 1. Check the log files
 2. Run the test scripts
 3. Refer to the setup guides
 4. Confirm your environment variable configurations
+
+*For the original Chinese documentation, please see README_CN.md*
