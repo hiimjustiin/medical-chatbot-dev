@@ -203,7 +203,7 @@ Add the following configuration:
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;  # 替换为你的域名
+    server_name your-domain.com;  # Replace with your domain
 
     # Frontend Service
     location / {
