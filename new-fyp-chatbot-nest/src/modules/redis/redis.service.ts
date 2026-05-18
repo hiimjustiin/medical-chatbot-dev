@@ -19,7 +19,7 @@ export class RedisService implements OnModuleDestroy {
         url: redisUrl,
         socket: {
           connectTimeout: 60000,
-          lazyConnect: true,
+          // lazyConnect: true,
         },
       });
 
@@ -64,7 +64,7 @@ export class RedisService implements OnModuleDestroy {
   async get<T = any>(key: string): Promise<T | null> {
     try {
       const value = await this.client.get(key);
-      return value ? JSON.parse(value) : null;
+      return value ? JSON.parse(value as string) : null;
     } catch (error) {
       this.logger.error(`❌ Redis GET error for key ${key}:`, error.message);
       return null;

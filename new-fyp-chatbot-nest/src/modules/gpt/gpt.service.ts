@@ -76,13 +76,13 @@ export class ChatService {
 
     // 4. Construct prompt
     const prompt = `
-// User's historical exercise information is as follows:
-// ${weeklyReport}
+    // User's historical exercise information is as follows:
+    // ${weeklyReport}
 
-// User's question is as follows:
-// ${content}
+    // User's question is as follows:
+    // ${content}
 
-Please provide a targeted suggestion or reply based on the user's historical exercise information. If no historical data is available, provide general health and exercise advice without mentioning the lack of data. Never say "no historical data" or similar phrases.`;
+    Please provide a targeted suggestion or reply based on the user's historical exercise information. If no historical data is available, provide general health and exercise advice without mentioning the lack of data. Never say "no historical data" or similar phrases.`;
 
     this.logger.log(`🤖 [GPT Service] Prompt sent to GPT: ${prompt.substring(0, 200)}...`);
 
@@ -115,5 +115,26 @@ Please provide a targeted suggestion or reply based on the user's historical exe
   private generateQueryHash(phoneNumber: string, content: string): string {
     const hashInput = `${phoneNumber}:${content.trim().toLowerCase()}`;
     return crypto.createHash('md5').update(hashInput).digest('hex');
+  }
+
+  async generateProactiveMessage(phoneNumber: string, type: 'inactivity' | 'intensity', data: any): Promise<string> {
+    this.logger.log(`🤖 [GPT Service] Generating proactive message for ${type}`);
+
+    const prompt = type === 'inactivity' 
+      ? `The patient hasn't exercised in ${data.days} days. Write a short, encouraging, and friendly WhatsApp message (max 30 words) to remind them to stay active. Mention that consistency is key!`
+      : `The patient just finished a workout. Their average heart rate was ${data.avgHR} bpm, which is slightly below their target of ${data.target} bpm. Write a supportive message (max 30 words) praising their effort but gently suggesting they increase intensity next time.`;
+
+    try {
+      const chat = await this.openai.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: 'gpt-4', // Or 'gpt-3.5-turbo' if you want to save money
+        temperature: 0.8, // A bit higher for more "creative/friendly" tone
+      });
+
+      return chat.choices[0]?.message?.content || 'Keep up the great work!';
+    } catch (err) {
+      this.logger.error('❌ [GPT Service] OpenAI Error:', err);
+      return "Just a friendly reminder to keep moving and stay healthy!";
+    }
   }
 }

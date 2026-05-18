@@ -44,4 +44,15 @@ Total Time in Vigorous Intensity: ${report.totalVigorousIntensity.toFixed(1)} mi
 Keep up the good work!
     `.trim();
   }
+
+  @Get('check-inactivity')
+  async checkInactivity(@Query('profileId') profileId: string) {
+    // This calls the function you added to ExerciseService
+    return await this.exerciseService.checkInactivity(profileId);
+  }
+
+  @Get('check-intensity')
+  async checkIntensity(@Query('profileId') profileId: string) {
+    return await this.exerciseService.checkHeartRateIntensity(profileId);
+  }
 }
