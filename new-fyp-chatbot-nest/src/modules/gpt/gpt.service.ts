@@ -130,7 +130,7 @@ export class ChatService {
     try {
       const chat = await this.openai.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
-        model: 'gpt-4', // Or 'gpt-3.5-turbo' if you want to save money
+        model: 'llama3-8b-8192', // Or 'gpt-3.5-turbo' if you want to save money
         temperature: 0.8, // A bit higher for more "creative/friendly" tone
       });
 
