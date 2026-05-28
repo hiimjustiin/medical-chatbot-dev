@@ -180,7 +180,7 @@ def process_message(from_number: str, message_body: str):
 
     log_to_file(f"🔄 转发payload到 {current_app.config['FORWARD_URL']}: {payload}")
 
-    whatsapp_msg_response = "抱歉！我们在处理您的消息时遇到了错误。"
+    whatsapp_msg_response = "Sorry! An error occurred while processing your message on our server."
 
     try:
         res = requests.post(current_app.config["FORWARD_URL"], json=payload)
