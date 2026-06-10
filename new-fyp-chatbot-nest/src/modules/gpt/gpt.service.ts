@@ -92,7 +92,7 @@ export class ChatService {
     try {
       const chat = await this.openai.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
-        model: 'llama3-8b-8192', // Or 'llama-3.3-70b-specgroq' depending on your preference
+        model: 'llama-3.1-8b-instant', // Or 'llama-3.3-70b-specgroq' depending on your preference
         temperature: 0.7,
       });
       
@@ -130,7 +130,7 @@ export class ChatService {
     try {
       const chat = await this.openai.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
-        model: 'llama3-8b-8192', // Or 'gpt-3.5-turbo' if you want to save money
+        model: 'llama-3.1-8b-instant', // Or 'gpt-3.5-turbo' if you want to save money
         temperature: 0.8, // A bit higher for more "creative/friendly" tone
       });
 
